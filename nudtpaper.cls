@@ -193,7 +193,7 @@ gbnamefmt=lowercase,gbpub=false]{biblatex}%
 
 \newcommand{\installttf}{
     %%%% Windows Thesis Fonts
-    \setmainfont{Times New Roman PS Std}
+    \setmainfont{Times New Roman}
     \setsansfont{Arial}
     \setmonofont{Courier New}
     %%%% Using Office Family Fonts
