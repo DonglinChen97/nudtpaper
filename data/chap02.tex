@@ -2,16 +2,59 @@
 
 近年来，深度学习一直是计算机领域乃至多学科交叉应用领域的研究热点，不仅在计算机视觉方向有着广泛的应用，在光学、材料和航空航天等领域也出现了相关研究。尤其对于大数据应用场景，基于深度学习的方法已经成为重要的数据挖掘手段。
 对于气动优化乃至整个CFD领域而言，深度学习方法在此领域获得发展并取得成功只是时间问题。
-为了便于阐述本课题工作，本章首先介绍了CFD相关的基础理论，主要包括建立在宏观层次的Navier-Stokes（N-S）方程和介观层次的格子Boltzmann方法（Lattice Boltzmann Methods，LBM）；其次介绍了本文涉及到的深度学习相关的技术和方法，包括基于深度神经网络（Deep Neural Networks，DNN）和图神经网络（Graph  Neural Networks，GNN）的网络架构；最后介绍了本文使用的实验算例。
+为了便于阐述本课题工作，本章首先定义了本课题要解决的问题，即明确利用深度学习方法和技术要解决的问题和要达到的效果；
+其次介绍了CFD相关的基础理论，主要包括建立在宏观层次的Navier-Stokes（N-S）方程和介观层次的格子Boltzmann方法（Lattice Boltzmann Methods，LBM）；最后介绍了本文涉及到的深度学习相关的技术和方法，包括基于深度神经网络（Deep Neural Networks，DNN）和图神经网络（Graph  Neural Networks，GNN）的网络架构等。
 
-\section{计算流体动力学基础}
+\section{研究问题定义}
+利用传统CFD方法对流体问题（包括气动优化问题）进行研究的流程如图\ref{fig:cfdflow}所示。
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.92\textwidth]{figures/cfdflow.pdf}
+	\caption{利用传统CFD方法研究和解决流体问题的流程示意图}
+	\label{fig:cfdflow}
+\end{figure}
+
+
+首先利用流体力学知识对流体问题进行理论分析，建立物理模型；
+根据流体运动遵循的基本规律，利用数学方法推导出流体流动的控制方程，
+宏观层面上有粘性流动的Navier-Stokes方程和无粘流动的欧拉方程；
+针对特定的流体问题，明确其物理基础和假设，简化控制方程、确定边界条件和初始条件。
+由于CFD方法是利用数值计算对流体流动进行模拟，所以研究的不是连续运动的流体，必须利用数值方法对时间和空间进行离散，
+以便进行迭代计算求解。对空间的离散方法包括有限差分方法，有限元方法和有限体积方法；
+对时间的离散通常包括适用于定常流体问题求解的显示方法和适用于非定常问题的求解的隐式方法。
+确定离散形式之后，需要对几何进行划分，即生成网络，在网格上对控制方程进行求解。
+网格生成之后，选择合适的CFD求解器，依据初始条件和边界条件对求解器的参数进行设置，
+最后利用计算机进行迭代计算至模拟结果收敛。
+
+
+
+这种全阶CFD模拟往往耗时较长，难以满足全面、快速的设计空间探索需求。
+为了加速CFD模拟进程，提升气动优化效率，本文针对二维稳态流动问题，
+提出了两种基于深度学习的气动优化模型，图\ref{fig:cfd_dnnflow}展示了这两种模型的工作流程。
+
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.92\textwidth]{figures/cfd_dnnflow.pdf}
+	\caption{基于深度学习的气动优化模型工作流程示意图}
+	\label{fig:cfd_dnnflow}
+\end{figure}
+
+在气动流场预测模型中，将边界条件和几何外形形式化为适合神经网络训练的输入，
+利用深度学习方法构建端到端的预测模型，通过神经网络正向推理过程，得到对应的气动流场预测结果；
+气动流场模拟加速模型的流程与气动流场预测模型类似，不同之处在于模型训练完成后，将深度学习模型的结果输入到CFD求解器中，为CFD求解过程提供一个更加接近收敛状态的初场，从而达到减少迭代计算量、加速模拟的效果。
+
+
+
+\section{计算流体动力学基础理论}
 根据对气体在不同尺度上动力学规律的描述，计算流体力学方法可分为三类：宏观、介观和微观。
 
 宏观尺度上，假设流体连续地充满整个空间，流体被假设为连续介质。满足质量守恒、动量守恒以及能量守恒；在数学上，流体可由欧拉方程组、N-S方程组进行描述；在数值计算上，通过各种离散方法将欧拉方程组或N-S方程组离散成各种代数方程。
 介观尺度（分子自由程尺度）上，流体被离散为一系列流体粒子；在数学上，流体由统计力学方程描述；在数值计算上，构造符合一定物理规律的演化机制，通过演化得到与物理规律相符的数值结果。
 微观尺度上，不再假设流体介质为连续的，通过对每一个分子的运动进行模拟计算，
 然后在采用不同的方式进行统计平均，以获得流体的宏观运动规律。因为要对每一个分子的运动进行模拟计算，微观层面的方法往往需要消耗大量的计算资源。
-根据与本文研究内容的相关性，本节重点介绍LBM方法和雷诺平均N-S方程。
+根据与本文研究内容的相关性，本节重点介绍格子Boltzmann方法和雷诺平均N-S方程。
 
 
 
@@ -23,7 +66,7 @@ Boltzmann方程的基本思想是
 求出每一分子处于某种状态下的概率，通过统计的方法得出系统的宏观参数。 
 基于以上思想，物理学家 Boltzmann提出方程的三大假设：
 \begin{itemize}
-	\item[(1)] 分子相互碰撞只考虑二体碰撞，认为3个分子碰撞的概率很小；
+	\item[(1)] 分子相互碰撞只考虑二体碰撞，认为3个及3个以上分子碰撞的概率很小；
 	\item[(2)] 各个分子的速度分布是不依赖于另外的分子而独立存在；
 	\item[(3)] 外力不影响局部碰撞的动力学行为。 	
 \end{itemize}
@@ -43,7 +86,7 @@ Boltzmann方程的基本思想是
 \label{运动}
 \left(\frac{\partial f}{\partial t}\right)_{\text {运动 }}=-\vec{\xi} \cdot \frac{\partial f}{\partial \vec{r}}-\vec{a} \cdot \frac{\partial f}{\partial \vec{\xi}}\end{equation}
 
-考虑分子间的碰撞，应用刚体碰撞模型，根据碰撞前后动量守恒和能量守恒可得碰撞对速度分布函数的影响：
+\noindent 考虑分子间的碰撞，应用刚体碰撞模型，根据碰撞前后动量守恒和能量守恒可得碰撞对速度分布函数的影响：
 
 \begin{equation}
 \label{碰撞}
@@ -65,8 +108,9 @@ $d \Omega$表示球面微元在第一个分子的固定角。
 
 \begin{equation}\left(\frac{\partial f}{\partial t}\right)+\vec{\xi} \cdot \frac{\partial f}{\partial \vec{r}}+\vec{a} \cdot \frac{\partial f}{\partial \vec{\xi}}=v\left[f^{e q}(\vec{r}, \vec{\xi}, t)-f(\vec{r}, \vec{\xi}, t)\right]\end{equation}
 
+\noindent 等式右边即为线性算子$\Omega_{f}$。
 
-\subsubsection{LBGK模型}
+\subsubsection{格子Boltzmann方程}
 格子Boltzmann方程是BGK方程的进一步离散形式，这一离散形式包括了速度离散、时间离散、空间离散。
 对于时间离散，由于微观粒子时刻在做无规则的热运动，因此微观粒子的速度是连续的，其速度方向和大小有无穷个，但粒子的运动并不会显著影响流体的宏观运动。
 因此可以将分子速度简化为有限维速度空间，$\left\{\overrightarrow{e_{0}}, \vec{e}_{1}, \ldots, \overrightarrow{e_{N}}\right\}$，N表示速度种类数。
@@ -79,23 +123,103 @@ $\alpha=0,1, \ldots, N$。于是可得离散的Boltzmann方程：
 \frac{\partial f_{\alpha}}{\partial t}+\overrightarrow{e_{\alpha}} \cdot \nabla f_{\alpha}=-\frac{1}{\tau_{0}}\left(f_{\alpha}-f_{\alpha}^{e q}\right)+F_{\alpha}\end{equation}
 
 \noindent 其中$f_{\alpha}^{e q}$分子局部平衡分布；$F_{\alpha}$为离散速度空间的外力项。
-在速度离散的基础上，进一步进行时间离散和空间离散，公式\ref{速度离散}积分，采用矩形法对公式右边项进行逼近有：
+在速度离散的基础上，进一步进行时间离散和空间离散，对公式\ref{速度离散}积分，采用矩形法对公式右边项进行逼近有：
 
-\begin{equation}f_{\alpha}\left(\vec{r}+\overrightarrow{e_{\alpha}} \delta_{t}, t+\delta_{t}\right)-f_{\alpha}(\vec{r}, t)=-\frac{1}{\tau}\left[f_{\alpha}(\vec{r}, t)-f_{\alpha}^{e q}(\vec{r}, t)\right]+\delta_{t} F_{\alpha}(\vec{r}, t)\end{equation}
+\begin{equation}
+\label{LBM方程}
+f_{\alpha}\left(\vec{r}+\overrightarrow{e_{\alpha}} \delta_{t}, t+\delta_{t}\right)-f_{\alpha}(\vec{r}, t)=-\frac{1}{\tau}\left[f_{\alpha}(\vec{r}, t)-f_{\alpha}^{e q}(\vec{r}, t)\right]+\delta_{t} F_{\alpha}(\vec{r}, t)\end{equation}
+
+方程\ref{LBM方程}即为格子Boltzmann方程。
+DnQm模型\cite{Y1992Lattice}是格子Boltzmann方程基本模型，n表示空间维数，m表示速度的类型，常见的有D2Q7模型、D2Q9模型、D3Q15模型和D3Q19模型等，图\ref{fig:dnqm}给出了D2Q9和D3Q19的示意图。
+
+
+\begin{figure}[htb]
+	\centering
+	\subfloat[D2Q9]{\label{fig:d2q9}\includegraphics[width=0.35\textwidth]{figures/d2q9.png}} \qquad
+	\subfloat[D3Q19]{\label{fig:d3q19}\includegraphics[width=0.38\textwidth]{figures/d3q19.png}} 
+	\caption{D2Q9模型和D3Q19模型速度离散示意图}
+	\label{fig:dnqm}
+\end{figure}
+
+\noindent D2Q9模型适用于二维流动问题，将速度根据大小和方向的不同分为了9类；
+D3Q19模型适用于三维流动问题，速度离散也更加复杂，将速度根据大小和方向的不同分为了19类。
+
+LBM方法相对于宏观方法具有精度高的特点，与传统方法相比，对流项（碰撞项）是线性的，算法简单；由于粒子的运动只有碰撞和迁移，LBM方法编程容易；
+此外，LBM运算具有局部性，每个粒子只与周围相邻粒子有关，局部运算可同步进行，适合并行计算。
+因为以上优点，LBM方法在CFD领域应用广泛，利用深度学习技术提升LBM方法的模拟效率具有重要意义。
 
 
 \subsection{雷诺平均N-S（RANS）方程}
 流体流动一般由以下三个基本定律来控制：
-（1）质量守恒定律；（2）牛顿第二定律；（3）能量守恒定律。基于这三个基本的物理学定理构建的流动模型，将导出一组控制方程。
+（1）质量守恒定律；（2）牛顿第二定律；（3）能量守恒定律。基于这三个基本的物理学定理构建的流动模型，将导出一组控制方程，比如适合粘性流动的Navier-Stokes方程（N-S方程）。
 
-%，即连续性方程、动量方程和能量方程
+流体流动有不同的流动状态，当流速很小时，流体分层流动，互不混合，称为层流；当流速逐渐增大，流体的流线开始出现波浪状的摆动，摆动的频率及振幅随流速的增加而增加，此种流况称为过渡流；当流速增加到很大时，流线不再清楚可辨，流场中有许多小漩涡，层流被破坏，相邻流层间出现滑动和混合，这时的流体作不规则运动，这种运动称为湍流。
+
+湍流运动过程十分复杂，在数学上表现出极高的非线性，使用数值模拟方法解决湍流一直是流体力学研究的难点。
+虽然N-S方程能够准确地描述湍流运动的细节，但求解这样一个复杂的方程会花费大量的精力和时间。
+
+目前在CFD领域，解决湍流问题的方法主要包括直接数值模拟(Direct numerical simulation，
+DNS)、大涡模拟(Large eddy simulation，LES)和雷诺平均( Reynold average Navier-Stokes，RANS)。
+其中DNS和LES对网格精细度要求较高，在工程应用上还处于尚不成熟的阶段。
+为了在精度和效率上满足实际工程需要，研究者提出了基于时均理论的雷诺平均N-S模型，RANS在工程上应用也最多。
+对于本文研究的稳态不可压流动，在笛卡尔坐标系下有，连续性方程：
+
+\begin{equation}
+\label{连续性方程}
+\frac{\partial \rho}{\partial t}+\frac{\partial(\rho u)}{\partial x}+\frac{\partial(\rho v)}{\partial y}+\frac{\partial(\rho w)}{\partial z}=0\end{equation}
+
+\noindent 对动量方程采用二阶迎风对流格式离散：
 
 
+\begin{equation}\begin{array}{c}
+\label{动量方程}
+u \frac{\partial u}{\partial x}+v \frac{\partial u}{\partial y}+w \frac{\partial u}{\partial z}=-\frac{1}{\rho} \frac{\partial p}{\partial x}+\frac{\mu}{\rho} \nabla^{2} u \\
+u \frac{\partial v}{\partial x}+v \frac{\partial v}{\partial y}+w \frac{\partial v}{\partial z}=-\frac{1}{\rho} \frac{\partial p}{\partial y}+\frac{\mu}{\rho} \nabla^{2} v \\
+u \frac{\partial v}{\partial x}+v \frac{\partial w}{\partial y}+w \frac{\partial w}{\partial z}=-\frac{1}{\rho} \frac{\partial p}{\partial z}+\frac{\mu}{\rho} \nabla^{2} w
+\end{array}
+\end{equation}
 
-正文内容
 
-正文内容
+\noindent 对方程\ref{连续性方程}和\ref{动量方程}进行雷诺平均有：
+\begin{equation}\frac{\partial \rho}{\partial t}+\frac{\partial}{\partial x_{i}}\left(\rho \bar{u}_{i}\right)=0\end{equation}
 
+\begin{equation}\frac{\partial}{\partial t}\left(\rho \bar{u}_{i}\right)+\frac{\partial}{\partial x_{i}}\left(\rho \bar{u}_{j} \bar{u}_{i}\right)=-\frac{\partial \bar{p}}{\partial x_{i}}+\frac{\partial \bar{\sigma}_{i j}}{\partial x_{j}}+\frac{\partial}{\partial x_{j}}\left(-\rho \bar{u}_{i}^{\prime} \bar{u}_{j}^{\prime}\right)\end{equation}
+
+\noindent 其中$\bar{u}_{i}$为雷诺平均速度分量，$\rho$为密度，$p$为压强，$\bar{u}_{i}^{\prime}$平均脉动速度，$\partial \bar{\sigma}_{i j}$为应力张量分量。
+
+
+一般地，在对湍流流动的N-S方程平均后，得到的平均方程中会包含未知的雷诺应力项，导致了方程求解的不封闭问题。
+因此需要根据湍流运动规律以寻找附加条件和关系式构建湍流模型使方程封闭。
+此外，在进行雷诺平均的过程中损失了部分流动细节，引入湍流模型对于找回这些细节十分必要。
+对于RANS湍流模拟，根据Boussinesq\cite{schmitt2007boussinesq}假设，粘性系数由层流部分和湍流部分构成，
+即$\nu=\nu_{L}+\nu_{T}$，其中$\nu_{L}$是层流运动粘性系数（laminar kinematic viscosity）， $\nu_{T}$是湍流运动粘性系数（eddy-viscosity variable），由湍流模型方程计算得到。
+
+常用的湍流模型可根据所采用的微分方程数进行分类为：零方程模型、一方程模型、两方程模型、四方程模型、七方程模型等\cite{1998A}。本文使用的湍流模型是Spalart-Allmaras（SA）模型\cite{SAequation}，
+是一种主要用在航空领域的单方程湍流模型，对墙壁束缚（wall-bounded）流动，显示出很好的效果。
+SA模型认为在自由剪切流中能量和信息由大尺度流动流向小尺度流动，涡粘系数只有产生项和扩散项，所以满足以下基本运输方程：
+
+\begin{equation}
+\begin{split}
+\frac{D F}{D t}= & \frac{\partial F}{\partial t}+(u \cdot \nabla) F \\ = & {Diffusion} + {Production} - {Destruction}
+\end{split}
+\end{equation}
+
+\noindent 其中$F$外力，\textit{diffusion}是扩散项，\textit{production}是产生项，\textit{destruction}是损失项。
+对于湍流运动粘性系数$\nu_{T}$应用该运输方程有：
+
+\begin{equation}\label{SA_equo}
+\begin{split}
+\frac{D \nu_{T}}{D t}=& \frac{1}{\sigma}\left[\nabla \cdot((\nu_{L}+\nu_{T}) \nabla \nu_{T})+c_{b 2}(\nabla \nu_{T})^{2}\right] +c_{b 1} \tilde{S} \nu_{T} - \\ &c_{w 1} f_{w}\left[\frac{\nu_{T}}{d}\right]^{2}
+\end{split}
+\end{equation}
+
+\noindent 其中$\sigma$普朗特数，$c_{b 1}$和$c_{b 2}$为闭合常数，$d$表示到壁面的最短距离。
+$\tilde{S}$可以通过$d$和速度$u$计算得到，
+$f_{w}$是一个关于$\tilde{S}$和$\nu_{T}$无量纲函数，用于解决在边界层外部损失项收敛慢的问题。
+
+虽然许多湍流模型在某些特定的应用场景取得成功，但至今仍未有一个有效的通用的湍流模型，这也直接导致了RANS缺少普适性。
+
+\FIXME{本文就是要通过DL模拟求解器中复杂的迭代运算}
 
 
 \section{深度学习相关模型介绍}
@@ -285,7 +409,7 @@ Pix2Pix网络利用类似U-net的结构代替自编码网络作为生成器，
 \end{aligned}
 \end{equation}
 
-其中z为输入随机变量，在Pix2Pix网络输入仅为x。
+\noindent 其中z为输入随机变量，在Pix2Pix网络输入仅为x。
 此外，为了保证像素级低频信息的预测精度，Pix2Pix网络的损失函数还引入了$L_1$损失项：
 
 \begin{equation}
