@@ -1,11 +1,42 @@
-\chapter{基于U-net网络的流场预测方法}
+\chapter{基于深度卷积网络的流场预测方法}
 
 本章介绍了基于深度神经网络的气动流场预测方法，首先将流场数据通过合适的方法表示为深度神经网络可以接受的输入。
 然后借鉴图像分割领域中的U-net网络设计了气动流场预测网络\textsc{FlowDNN}，
 根据气动流场预测的实际需要，通过嵌入注意力模块网络架构对\textsc{FlowDNN}进行了改进，设计了遵循守恒定律的物理损失函数。
 最后利用基于LBM的求解器生成实验数据集，定义了新的预测模型评测指标并与三种基线网络进行了全面的比较。
 
-\section{数据表示及训练集生成}
+
+\section{引言}
+
+\subsection{动机分析}
+
+为了解决传统CFD方法进行流场模拟时间、经济成本较高的问题，
+本文尝试利用数据驱动的端到端的流场预测方法提升气动流场模拟的效率。
+基于深度卷积网络的气动特性和气动性能预测具有以下优势：
+1）深度卷积网络不需要对输入特征进行人工筛选和精简，可极大地减少设计变量数目限制，
+设计者能对几何外形的坐标点进行直接控制，设计变量可以细化为几何外形所有离散点的空间坐标，实现精细的外形优化。
+2）深度卷积网络可以得到更加符合物理直觉的模型。如对几何外形坐标点和气动性能的关系进行建模，
+输入数据是一个二阶或三阶张量，很好地保留了坐标点间的空间相邻关系，其特征提取过程具有空间上的平移不变性和缩放不变性。
+3）深度卷积网络由于能够提取更深层次的特征，因而拥有更强大的归纳能力，不仅可以获得气动性能预测，
+还可以将流场特征（如压力分布等）作为预测输出。
+
+当前，基于深度学习的气动评估及其在气动优化中的应用尚处于起步阶段，
+多参考深度学习在其他领域应用较为成熟的方法技术，尤其是深度卷积神经网络在计算机视觉领域的研究成果，
+在深度学习优化技术在气动优化场景的应用方面缺少进一步的研究，深度学习还没有与空气动力学实现交叉融合。
+因此，本文提出构建嵌入物理约束的深度卷积网络模型，利用深度学习优化技术增强模型流场数据特征提取能力，
+使其更加适用于处理气动优化问题。
+
+
+\subsection{研究思路}
+
+图像
+
+表示
+
+优化
+
+验证和大规模预测效率
+
 
 \subsection{基于笛卡尔网格的流场数据表示}
 利用深度学习技术对气动流场进行预测首先要解决的问题就是流场数据的表示问题，即如何将边界条件，物理场（如速度矢量场）等表示为神经网络可以接受的形式。
@@ -50,24 +81,9 @@ $D(i, j)$表示给定点$(i, j)$到几何边界的最短距离。
 无论是SDF和二元法，在输入流场时表示的边界条件和几何图形，在模型完成训练后进行流场预测时，每个笛卡尔网格点上的数值就不再表示几何图形，而是预测的物理量。通常输出特征图大小与输入相同，不同维度的特征图分别表示不同物理量在流场中的分布。
 
 
-\subsection{基于LBM求解器生成数据集}
-实验算例设置为二维定常不可压层流固体外部流场，几何外形为实际生活中不同形状的汽车外形。
-我们使用基于LBM方法的开源库MECHSYS\footnote{ http://mechsys.nongnu.org}对二维流场进行模拟。
-为了验证模型的泛化能力，我们将训练集设置为3000个简单几何体的组合形状，包括三角形、圆形、椭圆和方形等，不同样本中几何体大小和位置不同；验证集和测试集分别是22和44个不同形状的汽车外形。图\ref{fig:sample}是部分训练集和测试集数据样本可视化结果。
 
-\begin{figure}[htb]
-	\centering
-	\subfloat[训练集]{\label{fig:training_sample}\includegraphics[width=0.42\textwidth]{figures/data/data_rep/training_sample/train_sample.png}} \qquad
-	\subfloat[测试集]{\label{fig:testing_sample}\includegraphics[width=0.42\textwidth]{figures/data/data_rep/training_sample/test_sample.png}} 
-	\caption{训练集和测试集数据样本可视化示例}
-	\label{fig:sample}
-\end{figure}
 
-在进行LBM流场模拟时，雷诺数设置为400，保证模拟结果为层流；气流流向与x方向平行，采用D2Q9模型对速度矢量进行离散。
-所有LBM求解程序都在GPU上并行执行，迭代10000时间步，保证计算结果的收敛性。
-神经网络训练输入和输出特征图尺寸相同，输入为基于二元法表示的几何外形，输出为二维速度场，笛卡尔网格大小为256x128。
-
-\section{网络架构及优化技术}
+\section{基于U-net网络的气动流场预测}
 
 
 
@@ -279,9 +295,29 @@ b)另一方面，由于神经网络的冗余性，适当的剪枝并不会对预
 
 
 
-\section{实验设置}
+\section{实验设置与结果分析}
 
-\subsection{参数设置}
+\subsection{数据集与参数设置}
+
+\subsubsection{基于LBM求解器生成数据集}
+实验算例设置为二维定常不可压层流固体外部流场，几何外形为实际生活中不同形状的汽车外形。
+我们使用基于LBM方法的开源库MECHSYS\footnote{ http://mechsys.nongnu.org}对二维流场进行模拟。
+为了验证模型的泛化能力，我们将训练集设置为3000个简单几何体的组合形状，包括三角形、圆形、椭圆和方形等，不同样本中几何体大小和位置不同；验证集和测试集分别是22和44个不同形状的汽车外形。图\ref{fig:sample}是部分训练集和测试集数据样本可视化结果。
+
+\begin{figure}[htb]
+	\centering
+	\subfloat[训练集]{\label{fig:training_sample}\includegraphics[width=0.42\textwidth]{figures/data/data_rep/training_sample/train_sample.png}} \qquad
+	\subfloat[测试集]{\label{fig:testing_sample}\includegraphics[width=0.42\textwidth]{figures/data/data_rep/training_sample/test_sample.png}} 
+	\caption{训练集和测试集数据样本可视化示例}
+	\label{fig:sample}
+\end{figure}
+
+在进行LBM流场模拟时，雷诺数设置为400以获取层流模拟结果；气流流向与x方向平行，采用D2Q9模型对速度矢量进行离散。
+所有LBM求解程序都在GPU上并行执行，迭代10000时间步，保证计算结果的收敛性。
+神经网络训练输入和输出特征图尺寸相同，输入为基于二元法表示的几何外形，输出为二维速度场，笛卡尔网格大小为256x128。
+
+
+\subsubsection{参数设置}
 
 \newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
 \begin{table}[htp]
@@ -320,15 +356,17 @@ b)另一方面，由于神经网络的冗余性，适当的剪枝并不会对预
 
 
 
-\subsection{性能评估标准}
+\subsubsection{性能评估标准}
 
-\subsubsection{基线模型}
+\textbf{基线模型}
+
 本文引入了三个基线模型，用来比较和评估\textsc{FlowDNN}对稳态流场的预测结果。
 这三个基线模型分别参考文献\cite{DBLP:conf/kdd/GuoLI16,thuerey2019deep,DBLP:conf/miccai/RonnebergerFB15}，方便起见，三个模型分别被简称为\texttt{C-Net}，\texttt{T-Net}和\texttt{U-Net}。
 
 \FIXME{简单介绍三个基线模型}
 
-\subsubsection{流场预测结果评价指标}
+\textbf{流场预测结果评价指标}
+
 对于深度神经网络模型的预测结果，本文使用平均相对误差（Mean Relative Error，MRE）比较预测流场和真值之间的差异，对气动流场的预测准确率进行总体的评估。
 除了全场模拟结果，CFD领域专家通常对某些特定的区域感兴趣，比如流场边界层（即几何体表面附近流场），在这些区域中流场变化剧烈，往往包含着更多有用的信息，我们称之为感兴趣区域（Regions of Interest，RoI）。对于本文使用的汽车外部流场，我们定义RoI区域如图\ref{fig:errors_area}中红色方框选中区域所示。RoI不是固定的，对于不用的汽车外形，红色方框自适应地恰好选中整个汽车。在确定了RoI之后，即可求得该区域的平均相对误差$\rm{MRE_{RoI}}$。
 根据流体流动遵循的质量守恒定律和动量守恒定律，我们设计了${\rm{MRE}_{ma}}$和${\rm{MRE}_{mo}}$分别评测模型预测结果与真值的质量守恒一致性和动量守恒一致性。
@@ -360,9 +398,9 @@ MRE_{ma} / MRE_{mo} = { \frac{1}{N} \sum\limits_{l = 1}^N  \left({\sum\limits_{i
 
 
 
-\section{实验结果与分析}
+\subsection{实验结果与分析}
 
-\subsection{总体预测性能比较}
+\subsubsection{总体预测性能比较}
 通过大量实验，我们将基于不同深度学习方法的预测结果和基于LBM方法的求解器模拟结果进行了对比。
 表\ref{tab:all_comp}展示了\textsc{FlowDNN}和基线模型在测试集上预测准确率，推理时间和模型参数量等方面的性能表现，其中AM表示嵌入了注意力模块，$P$代表神经网络剪枝；\textsc{FlowDNN}均使用物理损失函数进行训练。
 
@@ -529,7 +567,7 @@ MRE_{ma} / MRE_{mo} = { \frac{1}{N} \sum\limits_{l = 1}^N  \left({\sum\limits_{i
 \end{table}
 
 
-\subsection{物理损失函数}\label{phy_effect}
+\subsubsection{物理损失函数}\label{phy_effect}
 
 为了探究物理损失函数对流场预测结果的影响，尤其是对预测结果和CFD求解器模拟结果的物理一致性的影响，
 本文分别使用$L_{physical}$和$L_{1}$损失函数对\textsc{FlowDNN}进行了训练。
@@ -563,7 +601,7 @@ MRE_{ma} / MRE_{mo} = { \frac{1}{N} \sum\limits_{l = 1}^N  \left({\sum\limits_{i
 	\label{fig:phy_hotmap}	
 \end{figure}
 
-\subsection{注意力机制}
+\subsubsection{注意力机制}
 为了提升模型的表示能力和非线性，提高\textsc{FlowDNN}对RoI区域的预测精度，
 我们在\textsc{FlowDNN}的skip connections上嵌入了SAM和CAM模块。
 从表\ref{tab:all_comp}中可知，嵌入注意力模块的\textsc{FlowDNN}有效增加了神经网络对RoI区域信息的提取能力，使RoI区域的平均相对误差$MRE_{RoI}$下降至9.16\%，同时提升了全场的预测准确率。
@@ -595,7 +633,7 @@ MRE_{ma} / MRE_{mo} = { \frac{1}{N} \sum\limits_{l = 1}^N  \left({\sum\limits_{i
 还有助于加速模型训练收敛，缩短模型训练的时间，同时提高模型的预测稳定性。
 
 
-\subsection{激活函数}\label{ac_effect}
+\subsubsection{激活函数}\label{ac_effect}
 激活层是深度神经网络的重要组成部分，对神经网络模型的预测效果有着十分重要的影响。
 本文比较了常用于气动预测模型的ReLU和ELU两种激活函数对气动流场预测模型的影响。
 图\ref{fig:activation_intro}展示了两种激活函数的工作原理。
@@ -645,7 +683,7 @@ x & \text { if } x>0 \\
 \end{figure}
 
 
-\subsection{神经网络剪枝}
+\subsubsection{神经网络剪枝}
 
 在选定损失函数，利用注意力机制对\textsc{FlowDNN}进行优化之后，我们对\textsc{FlowDNN}进行了神经网络剪枝。
 引入神经网络剪枝主要出于两方面的考虑：
