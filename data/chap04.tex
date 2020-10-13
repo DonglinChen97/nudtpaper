@@ -36,8 +36,10 @@
 利用CFD求解器对深度学习模型的预测结果进行优化，将计算收敛的结果作为最终的流场预测结果。
 虽然深度学习模型在此方法中只是作为加速模块部分代替了CFD求解器的工作，
 导致气动流场模拟效率低于基于深度学习的流场预测方法，
-但由于气动流场模拟结果最终由CFD求解器输出，因此预测结果满足计算收敛条件和流体流动物理规律。
+但由于气动流场模拟结果最终由CFD求解器输出，因此输出结果满足求解器计算收敛条件和流体流动物理规律。
 
+由于图神经网络进行训练时需要保证图的拓扑结构保持不变，
+因此本章主要针对给定几何外形在不同流动条件下气动流场模拟效率进行了研究。
 
 
 
@@ -152,14 +154,14 @@ $E_{G}$表示边，每条边连接两个图节点，考虑到流体在网格中�
 \subsection{数据集与参数设置}
 
 \subsubsection{基于OpenFOAM求解器生成数据集}
-实验算例设置二维非定常可压湍流固体外部流场，几何外形选取为空气动力学中经常研究的翼型。
+实验算例设置二维不可压湍流条件下固体外部流场，几何外形选取为空气动力学中经常研究的翼型。
 机翼一般都有对称面。平行于机翼的对称面截得的机翼截面，称为翼剖面，通常也称为翼型。
 翼型的几何形状是机翼的基本几何特性之一。
 翼型的气动特性，直接影响到机翼及整个飞行器的气动特性，在空气动力学理论和飞行器设计中具有重要的地位。
 图\ref{fig:airfoil_example}展示了翼型e342和翼型NACA 0012的几何外形示意图\cite{UIUCsite}。
 \begin{figure}[htb]
 	\centering
-	\subfloat[e432]{\label{fig:e432}\includegraphics[width=0.42\textwidth]{figures/e342.png}} \qquad
+	\subfloat[e342]{\label{fig:e432}\includegraphics[width=0.42\textwidth]{figures/e342.png}} \qquad
 	\subfloat[NACA 0012]{\label{fig:n0012}\includegraphics[width=0.42\textwidth]{figures/n0012.png}} 
 	\caption{翼型e342和翼型NACA 0012几何外形示意图}
 	\label{fig:airfoil_example}
@@ -170,6 +172,42 @@ Gmsh是一个开源的具有内置CAD（Computer Aided Design）引擎和后期�
 可以方便地在Python脚本中调用Gmsh提供的接口对翼型进行网格生成。
 全部网格信息保存在\texttt{.msh}文件中，再利用\texttt{gmshToFoam}指令将\texttt{.msh}文件导入OpenFOAM中，
 就能得到\ref{meshstructure}节介绍的网格文件，完成网格生成任务。
+
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.42\textwidth]{figures/flowfield.png}
+	\caption{实验算例二维流场区域示意图}
+	\label{fig:field}
+\end{figure}
+
+在几何外形确定为翼型e342的基础上，本文在不同的攻角和来流马赫数条件下，利用OpenFOAM软件对翼型周围流场进行模拟。
+图\ref{fig:field}展示了实验算例的流场区域设置，二维流场在x方向和y方向的范围均为-5\textasciitilde5，
+翼型几何体长度范围0\textasciitilde1。
+求解器使用OpenFOAM中不可压缩稳态流动求解器\texttt{simpleFoam}，压力速度耦合采用的simple算法，湍流模型使用SA一方程模型。
+计算的时间步长设置为1，迭代次数设置为5000保证在不同的流场条件下得到收敛的流场。
+根据攻角（AoA）和流场来流马赫数（Mach  number）不同划分训练集和测试集如下：
+$$\text {AoA}_{train} =\{-10,-9, \ldots, 9,10\}$$
+$$\text {Mach}_{train} =\{0.2, 0.3, 0.35, 0.4, 0.5, 0.55, 0.6, 0.7\}$$
+$$\text {AoA}_{test} =\{-10,-9, \ldots, 9,10\}$$
+$$\text {Mach}_{test} =\{0.25, 0.45, 0.65\}$$
+
+通过${AoA}_{train}$和${Mach}_{train}$与${AoA}_{test}$和${Mach}_{test}$的组合分别构成训练集和测试集的流场条件，其中训练集样本大小为168，测试集数据大小为63。
+训练集和测试集的数据不同，但是两个集合的参数有着相似的范围，
+该数据集划分方法称为内插数据集划分并广泛用于流场模拟相关工作中\cite{bhatnagar2019prediction,DBLP:conf/kdd/GuoLI16}。
+
+\subsubsection{参数设置}
+本章在PyTorch深度学习框架下，基于PyTorch Geometric库提供的GCN模块设计了气动流场加速网络模型。
+实验在Ubuntu18.04系统下利用GEFORCE RTX 2080Ti显卡进行。
+模型训练使用Adam优化算法，学习率设置为$5\times10^{-5}$，模型在数据集上训练5000轮次（epoch）。
+GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数。
+
+在生成数据集和带回CFD求解器进行预测结果优化均使用OpenFOAM v7，
+对于速度、压力和湍流运动粘度的残差收敛条件均设置为$1\times10^{-5}$。
+在进行代数方程求解时，本章使用\texttt{GAMG}（generalised geometric-algebraic multi-grid）多重网格求解器对压力进行求解，
+该求解器广泛用于加速CFD收敛；
+速度和湍流运动粘度使用\texttt{smoothSolver}光滑求解器进行求解。所有求解器容错误差均为$1\times10^{-8}$，光滑器使用\texttt{GaussSeidel}。
+
 
 \subsection{实验结果与分析}
 
