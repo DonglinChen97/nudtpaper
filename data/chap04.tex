@@ -43,7 +43,7 @@
 
 
 
-\subsection{OpenFOAM网格数据结构和图结构数据表示}\label{meshstructure}
+\subsection{OpenFOAM网格数据结构}\label{meshstructure}
 本文基于OpenFOAM求解器进行网格生成和流场模拟，
 OpenFOAM不支持二维网格，对于导入的外部二维网格，OpenFOAM会自动给网格加一个厚度，然后将前后面边界条件设置为空。
 OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所示。
@@ -129,23 +129,60 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 \end{figure}
 
 
-本文定义图结构$G=\left(X, E_{G}\right)$来表示OpenFOAM网格信息，
+
+
+
+
+
+1 The overall architecture
+形式化建模
+
+2 卷积神经网络算法
+
+3 优化模块
+
+\section{基于GCN网络的气动流场模拟加速}
+
+针对流场数据的非结构性和深度学习模型预测结果的可靠性，
+本章提出了基于图卷积神经网络的气动流场模拟加速方法。
+图\ref{fig:gcnflow}展示了基于GCN网络的气动流场加速方法的工作流程，主要包括三个部分：
+a）图数据表示部分；b）基于GCN网络的气动流场加速部分；c）基于CFD求解器的模拟结果优化部分。
+
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.99\textwidth]{figures/data/architecture2.pdf}
+	\caption{基于GCN网络的气动流场加速方法示意图}
+	\label{fig:gcnflow}
+\end{figure}
+
+
+\subsection{图结构数据表示}
+
+本章定义图结构$G=\left(X, E\right)$来表示OpenFOAM网格信息，
 其中$X \in R^{N \times d}$表示图节点，节点数目为N，节点特征维度为d。
-$E_{G}$表示边，每条边连接两个图节点，考虑到流体在网格中是相互流通的，所有的边均定义为无向边。
+$E$表示边，每条边连接两个图节点，考虑到流体在网格中是相互流通的，所有的边均定义为无向边。
 
 不同于基于网格节点进行流场模拟的求解器SU2\cite{2015SU2}，OpenFOAM是基于有限体积方法离散的求解器，
 基于控制体单元进行流场计算和模拟。因此，每个节点对应网格中的体单元，节点数和体单元总数相同；
-对于二维流场，节点特征值包括体心坐标（$C_x$，$C_y$），体单元的边界属性。
+对于二维流场，节点特征值包括体心坐标（$C_x$，$C_y$），体单元的边界属性（）$B_l$。
 其中体心坐标可以通过\texttt{points}文件中点坐标进行插值得到；
 体单元的边界属性由\texttt{boundary}文件中所属面单元的边界类型决定。
-此外，本文将更多流场信息嵌入图节点特征向量中，包括控制流体流动的马赫数、攻角等全局变量，
-利用距离符号函数计算的给定图节点到几何边界的最短距离。
+此外，本章将更多流场信息嵌入图节点特征向量中，包括控制流体流动的马赫数（Mach）、攻角（AoA）等全局变量。
+利用距离符号函数计算的给定图节点到几何边界的最短距离（$D_s$），更好地帮助图神经网络学习节点的位置距离关系。
 每条边对应两个体单元的共有面，边总数和内部面单元总数相同，两个体单元分别为该面单元的owner和neighbor。
 
+通过以上表示可以得到基于体单元的图数据结构，
+图节点$X=\left\{x_1, x_2 \ldots, x_n \right\}$，
+每个图节点$X_i$的特征维度为6包括$C_x$，$C_y$，$B_l$，Mach，AoA和$D_s$；
+边$E = \left\{e_1, e_2 \ldots, e_m \right\}$，
+每条边$e_i$连接两个图节点$x_j,x_k \in X$且$j\not= k$。
+这种基于网格结构的数据表示可以灵活处理各种复杂条件下的流场环境，
+而且能够扩展到三维的流场数据表示，具有很强的通用性。
+全局的流场控制信息可以通过特征向量嵌入的方式作用在每个图节点上，
+与流场几何位置信息有效融合，充分参与图神经网络的训练。
 
-
-\section{基于GCN网络的气动流场加速}
-正文内容
+\subsection{基于GCN网络的加速模块}
 
 
 
