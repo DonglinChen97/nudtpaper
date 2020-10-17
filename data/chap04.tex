@@ -131,16 +131,6 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 
 
 
-
-
-
-1 The overall architecture
-形式化建模
-
-2 卷积神经网络算法
-
-3 优化模块
-
 \section{基于GCN网络的气动流场模拟加速}
 
 针对流场数据的非结构性和深度学习模型预测结果的可靠性，
@@ -182,8 +172,56 @@ $E$表示边，每条边连接两个图节点，考虑到流体在网格中是�
 全局的流场控制信息可以通过特征向量嵌入的方式作用在每个图节点上，
 与流场几何位置信息有效融合，充分参与图神经网络的训练。
 
-\subsection{基于GCN网络的加速模块}
+\subsection{基于GCN网络的气动流场模拟加速}
 
+利用图数据结构本章将流场数据表示为图神经网络可以接受的输入，
+该图数据包括了网格结构信息、流场边界信息和流场控制条件信息等。
+本章利用图卷积网络对形式化表示后的流场数据进行学习，输出流场稳定时速度场、压力场等相关物理量的预测结果。
+算法\ref{GCNflow}展示了基于图卷积网络的气动流场模拟加速建模整体过程。
+
+\renewcommand{\algorithmicrequire}{\textbf{输入：}}
+\renewcommand{\algorithmicensure}{\textbf{输出：}}
+\begin{algorithm}[htbp]
+	\caption{基于图卷积网络的气动流场模拟加速建模}
+	\label{GCNflow}
+	\begin{algorithmic}[1]
+		\REQUIRE 图数据结构：$Z_{0} = X = [C_x, C_y, B_l, AoA, Mach, D_s]$ 
+		\ENSURE  二维气动流场模拟结果：$Y = [ U_x,U_y, P]$
+		
+		\STATE 构建图卷积网络模型，随机初始化权重矩阵
+		\STATE 计算图形的拉普拉斯矩阵 L = D − W
+		\STATE 定义图卷积操作GCN，确定激活函数
+		\FOR{$i=1$ to $K-1$}
+		\STATE $Z_{i} = \operatorname{ReLU}\left(\mathrm{GCN}_{i}\left(Z_{i-1}\right)\right) $
+		\ENDFOR
+		\STATE $Y_{temp} = \mathrm{GCN}_{K}\left(Z_{K-1}\right)$，$Y_{temp}$ = $[ U_x,U_y, P, nut, nuTilda]$
+		\STATE $Y_{temp} \Rightarrow S_0$ 
+		\STATE $Y = S_t = simpleFoam(S_0)$  
+	\end{algorithmic}
+\end{algorithm}
+
+基于文献\cite{2016Semi}中的GCN模块，本章构建了用于气动流场模拟加速的图卷积网络，
+包括$K$个图卷积层，前$K-1$个图卷积层后接一个激活层。
+层与层之间的传播方式如下：
+\begin{equation}
+H^{(l+1)}=\sigma\left(\tilde{D}^{-\frac{1}{2}} \tilde{A} \tilde{D}^{-\frac{1}{2}} H^{(l)} W^{(l)}\right)
+\end{equation}
+
+\noindent 其中$H^{(l)} \in R^{N \times d^{(l)}}$是第$l$层图结构特征表达，维度是$N \times d^{(l)}$，
+$N$表示图节点数目，$d^{(l)}$是节点特征维度。
+矩阵$\tilde{A} = A + I$，其中A是图节点的邻接矩阵，I是单位矩阵，
+表示每个节点在下一层状态不仅与自己的邻居有关还与节点本身有关。
+矩阵$\tilde{D}$是$\tilde{A}$的度矩阵，用于归一化处理；
+$W^{(l)}$是权重矩阵，在图卷积网络训练过程中不断调整；$\sigma$代表非线性激活函数ReLU。
+图的拓扑结构在训练中保持不变，因此图卷积算子中$\tilde{D}^{-\frac{1}{2}} \tilde{A} \tilde{D}^{-\frac{1}{2}}$可以在训练之前确定并重复用于图卷积计算。
+
+图卷积网络模型输出为$Y_{temp}$，包括$[ U_x,U_y, P, nut, nuTilda]$，
+其中粘度系数nut和湍流运动粘度nuTilda是OpenFOAM模拟计算的中间结果，有助于构造CFD求解器的初始场。
+结合流场控制条件攻角和马赫数，可以将气动流场预测结果转化为OpenFOAM中CFD求解器的初始场。
+通过训练，GCN网络能够有效提取流场数据特征，学习流体流动规律；
+在新的给定流场条件下，GCN网络能够输出一个接近真实模拟结果的预测流场。
+因此，相对于传统CFD模拟，基于GCN的流场模拟方法在该预测结果的基础上在利用CFD求解器进行预测结果优化，
+能够减少迭代计算的时间，从而实现模拟效率的提升。
 
 
 \section{实验设置与结果分析}

@@ -438,20 +438,49 @@ G^{*}=\arg \min _{G} \max _{D} \mathcal{L}_{c G A N}(G, D)+\lambda \mathcal{L}_{
 近年来，人们对深度学习方法在图上的拓展进行了大量的研究，研究人员借鉴CNN、RNN以及图嵌入技术的思想，
 定义和设计了专用于处理图结构数据的神经网络，即图神经网络（Graph  Neural  Network, GNN）。
 文献\cite{2019A}将GNN分为五大类：图卷积网络（Graph Convolution Networks，GCN）、 图注意力网络（Graph Attention Networks）、图自编码器（ Graph Autoencoders）、图生成网络（ Graph Generative Networks） 和图时空网络（Graph Spatial-temporal Networks）。
-本节重点介绍图卷积神经网络\cite{2016Semi}。
+本节重点介绍图卷积神经网络。
 
-和卷积神经网络类似，GCN可以使用多层神经网络对图数据进行特征提取，层与层之间的传播方式如下：
+GCN方法主要分为两大类，基于谱（spectral-based）和基于空间（spatial-based）。
+基于谱的方法将空域信号利用傅里叶变换转换到频域进行分析处理，完成在空域无法完成的操作。
+对于无向图有正则化拉普拉斯矩阵：
 
 \begin{equation}
-H^{(l+1)}=\sigma\left(\tilde{D}^{-\frac{1}{2}} \tilde{A} \tilde{D}^{-\frac{1}{2}} H^{(l)} W^{(l)}\right)
+\mathbf{L}=\mathbf{I}_{\mathbf{n}}-\mathbf{D}^{-\frac{1}{2}} \mathbf{A} \mathbf{D}^{-\frac{1}{2}}
 \end{equation}
 
-\noindent 其中$H^{(l)} \in R^{N \times d^{(l)}}$是第$l$层图结构特征表达，维度是$N \times d^{(l)}$，
-$N$表示图节点数目，$d^{(l)}$是节点特征维度。
-矩阵$\tilde{A} = A + I$，其中A是图节点的邻接矩阵，I是单位矩阵，
-表示每个节点在下一层状态不仅与自己的邻居有关还与节点本身有关。
-矩阵$\tilde{D}$是$\tilde{A}$的度矩阵，用于归一化处理；
-$W^{(l)}$是权重矩阵，在图卷积网络训练过程中不断调整；$\sigma$代表非线性激活函数。
+\noindent $I_n$为单位矩阵，A为图的邻接矩阵，D为对角矩阵。
+对L进行特征值分解有：
+
+\begin{equation}
+\mathbf{L}=\mathbf{U} \mathbf{\Lambda} \mathbf{U}^{T}
+\end{equation}
+
+\noindent U是特征向量构成的矩阵，$\Lambda$是对角矩阵，对角线上的值为L的特征值。
+对输入图信号x的傅里叶变换和傅里叶逆变换分别被定义为
+
+\begin{equation}
+\mathfrak{F}(\mathrm{x})=\mathbf{U}^{T} \mathrm{x} 
+\end{equation}
+\begin{equation}
+\mathfrak{F}^{-1}(\hat{\mathrm{x}})=\mathbf{U} \hat{\mathrm{x}}
+\end{equation}
+
+\noindent $\hat{\mathrm{x}}$为傅里叶变换的结果。
+定义对输入图信号的图卷积操作为：
+
+\begin{equation}
+\begin{aligned}
+\mathrm{x} *_{G} \mathrm{g} &=\mathfrak{F}^{-1}(\mathfrak{F}(\mathrm{x}) \odot \mathfrak{F}(\mathrm{g})) \\
+&=\mathbf{U}\left(\mathbf{U}^{T} \mathrm{x} \odot \mathbf{U}^{T} \mathrm{g}\right)
+\end{aligned}
+\end{equation}
+\noindent 其中g是定义的滤波器，$\odot$表示哈达玛积运算。
+基于频谱的图卷积网络都遵循这样的模式，它们之间关键的不同点在于选择的滤波器不同
+基于谱的方法从图信号处理的角度引入滤波器来定义图卷积，根据图谱理论和卷积定理，将数据由空域转换到谱域做处理，理论基础坚实。
+基于空间的方法将图卷积表示为从邻域聚合特征信息，直接在图空间上定义卷积操作，灵活性更强。
+
+
+
 
 \begin{figure}[htp]
 	\centering
@@ -466,14 +495,14 @@ $W^{(l)}$是权重矩阵，在图卷积网络训练过程中不断调整；$\sig
 \romannumeral2）接收：每个节点将邻居节点的特征信息聚集起来。这一步是在对节点的局部结构信息进行融合；
 \romannumeral3）变换：把前面的信息聚集之后做非线性变换，增加模型的表达能力。
 图\ref{fig:gcn}展示了一个简单的GCN网络，从图中可以发现数据的拓扑结构在训练过程中始终保持不变，
-所以图卷积算子中$\tilde{D}^{-\frac{1}{2}} \tilde{A} \tilde{D}^{-\frac{1}{2}}$可以在训练之前确定并在训练中重复利用。
+可以在训练中重复利用。
 每一层的节点特征维度是不固定的，可以根据训练任务的复杂程度进行灵活的调整。
 
 概括而言，图卷积算子的作用就是将每个节点的特征与其邻居节点的特征加权平均后传播到下一层，具有以下特点：
 1）局部参数共享，计算节点特征值时，按一定规律将参与聚合的节点分为若干个子集，
 同一个子集内的节点采用相同的权重；
 2）节点感受域正比于层数，每一层图卷积运算只能和相邻的节点进行特征聚合；通过增加GCN层数，每个节点上参与运算的其他节点信息就更多；
-3）适用于任意拓扑结构的节点与图，能同时对节点特征信息与结构信息进行端对端学习。
+3）适用于任意拓扑结构的节点与图，能同时对节点特征信息与图结构信息进行端对端学习。
 
 
 %\section{实验算例介绍}
@@ -486,7 +515,7 @@ $W^{(l)}$是权重矩阵，在图卷积网络训练过程中不断调整；$\sig
 
 本章首先通过对比传统CFD求解器和基于深度学习的气动优化模型的工作流程，明确了利用深度学习技术和方法要解决的CFD问题。
 然后介绍了CFD相关理论知识，重点介绍了在宏观和介观层面对流体运动规律的描述。
-最后分析了气动流场模拟任务和深度学习中图像回归预测任务的相似性，介绍了与本文研究内容紧密相关的四种深度网络模型。
+最后分析了气动流场模拟任务和深度学习中图像回归预测任务的相似性，介绍了与本文研究内容紧密相关的深度网络模型。
 
 
 
