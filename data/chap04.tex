@@ -44,8 +44,10 @@
 
 
 \subsection{OpenFOAM网格数据结构}\label{meshstructure}
-本文基于OpenFOAM求解器进行网格生成和流场模拟，
-OpenFOAM不支持二维网格，对于导入的外部二维网格，OpenFOAM会自动给网格加一个厚度，然后将前后面边界条件设置为空。
+本文基于OpenFOAM软件进行网格生成和流场模拟。
+OpenFOAM是基于C++程序语言开发用于场运算和操作的类库，主要包括两大类：求解器（solvers）和工具（utilities）。
+用户可以根据特定的连续介质流体力学问题在标准的求解器基础上进行开发。工具主要有前处理工具和后处理工具两类。
+前处理工具包括几何处理、网格处理、边界条件设置等，后处理工具包括数据提取与绘图、可视化处理等。
 OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所示。
 
 \begin{table}[htp]
@@ -128,7 +130,7 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 	\label{fig:boundary_file}	
 \end{figure}
 
-
+\noindent OpenFOAM不支持二维网格，对于导入的外部二维网格，OpenFOAM会自动给网格加一个厚度，然后将前后面（front和back）边界类型设置为空（empty）。
 
 
 \section{基于GCN网络的气动流场模拟加速}
