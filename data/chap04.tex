@@ -310,15 +310,11 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 
 \subsection{实验结果与分析}
 
-\texttt{GCN}、\texttt{GCN+CFD}和\texttt{P\_CFD}
+\textit{GCN}、\textit{GCN+CFD}和\textit{P\_CFD}
 
-本节将基于GCN模型的模拟结果称为\texttt{GCN}模拟结果；
-将基于GCN模型的模拟结果并进一步利用CFD求解器进行优化的结果称为\texttt{GCN+CFD}模拟结果；
-将传统的CFD求解器计算结果称为\texttt{P\_CFD}模拟结果。
-
-
-表\ref{tab:gcn_comp}展示了\texttt{GCN}、\texttt{GCN+CFD}和\texttt{P\_CFD}三种方法在测试集上的性能表现。
-其中\texttt{GCN+CFD}和\texttt{P\_CFD}的预测结果
+本节将基于GCN模型的模拟结果称为\textit{GCN}模拟结果；
+将基于GCN模型的模拟结果并进一步利用CFD求解器进行优化的结果称为\textit{GCN+CFD}模拟结果；
+将传统的CFD求解器计算结果称为\textit{P\_CFD}模拟结果。
 
 \begin{table}[htp]
 	\caption{不同流场模拟方法性能比较}
@@ -328,18 +324,39 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 	
 	\begin{tabular}{p{2.2cm}p{1.5cm}p{1.8cm}p{1.4cm}|p{1.5cm}p{1.8cm}p{1.4cm}}
 		\toprule
-		  & \multicolumn{3}{c|}{内插集} & \multicolumn{3}{c}{外推集} \\
+		& \multicolumn{3}{c|}{内插集} & \multicolumn{3}{c}{外推集} \\
 		\textbf{Method} &  $L_1$ loss	&	Mass Error &	Time (s)&	$L_1$ loss	&	Mass Error &	Time (s)\\
 		\midrule
-
+		
 		\textit{GCN}   &	$4.59 \mathrm{e}-5$ &	30.99\% &	0.011&	0.0002	&    30.99\%	& 	0.011\\
 		\textit{GCN+CFD}  & 	-	&	$1 \mathrm{e}-10$ &	5.277 &	- &	$1 \mathrm{e}-10$	& 5.902  \\
 		\textit{P\_CFD}  & 	-	&	$1 \mathrm{e}-10$ &	8.612 &	- &	$1 \mathrm{e}-10$	& 8.590 \\
-		%		Ours w/ AM \& $P^2$		&\textbf{5.20\%}  & \textbf{1.99}   	& 8.50   \\
 		\bottomrule
 	\end{tabular}
 	
 \end{table}
+
+表\ref{tab:gcn_comp}展示了\textit{GCN}、\textit{GCN+CFD}和\textit{P\_CFD}三种方法在测试集上的性能表现。
+本章主要对不同方法的流场模拟结果的物理一致性和模拟效率进行比较。
+对于流场模拟结果的物理一致性，本章使用OpenFoam软件提供的\texttt{quad}算法对不同方法预测结果的速度场求散度，
+检验该方法是否能得到无散速度场，以满足稳态流动问题的连续性方程。
+由于该检验方法依据质量守恒定律，因此本章将测得的误差值命名为$Mass Error$。
+比较\textit{GCN}模型预测结果$L_1$误差值，可以发现在内插集上，\textit{GCN}模型的预测结果更好，
+但是在两个数据集上的$Mass Error$值较大，即GCN模型的流场模拟结果不能产生无散速度场。
+由于CFD求解器参与了流场模拟，\texttt{GCN+CFD}和\texttt{P\_CFD}方法的模拟结果可以得到有效保证。
+图\ref{fig:show}展示了三种方法在内插测试集上某一样本（攻角为$3^{\circ}$，马赫数0.25）压力场和速度场的分布概略图，
+压力场中红色表示正压，蓝色表示负压；速度场中红色表示高速，白色表示低速。
+从图\ref{fig:show}可以直观看出\textit{GCN}的预测结果与另外两种方法的模拟结果还有很大差异。
+由于缺少物理模型（CFD求解器）的约束，深度学习模型的结果缺乏物理一致性，难以直接应用到实际应用问题中。
+
+
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4/show.png}
+	\caption{不同方法模拟的压力场和速度场的分布概略图}
+	\label{fig:show}
+\end{figure}
 
 
 \begin{figure}[htp]
