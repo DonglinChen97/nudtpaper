@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
     speedup_lis = []
 
+    print ('average time raw: {}, average time gcn: {}'.format(sum(lis_raw) / len(lis_raw), sum(lis_gcn) / len(lis_gcn) ))
     for i,j in zip(lis_raw, lis_gcn):
         speedup = i / j
 

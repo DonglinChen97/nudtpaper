@@ -310,27 +310,50 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 
 \subsection{实验结果与分析}
 
-本节将基于GCN模型的模拟结果称为$GCN$模拟结果；
-将基于GCN模型的模拟结果并进一步利用CFD求解器进行优化的结果称为$GCN+CFD$模拟结果；
-将传统的CFD求解器计算结果称为$P\_CFD$模拟结果。
+\texttt{GCN}、\texttt{GCN+CFD}和\texttt{P\_CFD}
+
+本节将基于GCN模型的模拟结果称为\texttt{GCN}模拟结果；
+将基于GCN模型的模拟结果并进一步利用CFD求解器进行优化的结果称为\texttt{GCN+CFD}模拟结果；
+将传统的CFD求解器计算结果称为\texttt{P\_CFD}模拟结果。
 
 
+表\ref{tab:gcn_comp}展示了\texttt{GCN}、\texttt{GCN+CFD}和\texttt{P\_CFD}三种方法在测试集上的性能表现。
+其中\texttt{GCN+CFD}和\texttt{P\_CFD}的预测结果
+
+\begin{table}[htp]
+	\caption{不同流场模拟方法性能比较}
+	
+	\label{tab:gcn_comp}
+	\centering
+	
+	\begin{tabular}{p{2.2cm}p{1.5cm}p{1.8cm}p{1.4cm}|p{1.5cm}p{1.8cm}p{1.4cm}}
+		\toprule
+		  & \multicolumn{3}{c|}{内插集} & \multicolumn{3}{c}{外推集} \\
+		\textbf{Method} &  $L_1$ loss	&	Mass Error &	Time (s)&	$L_1$ loss	&	Mass Error &	Time (s)\\
+		\midrule
+
+		\textit{GCN}   &	$4.59 \mathrm{e}-5$ &	30.99\% &	0.011&	0.0002	&    30.99\%	& 	0.011\\
+		\textit{GCN+CFD}  & 	-	&	$1 \mathrm{e}-10$ &	5.277 &	- &	$1 \mathrm{e}-10$	& 5.902  \\
+		\textit{P\_CFD}  & 	-	&	$1 \mathrm{e}-10$ &	8.612 &	- &	$1 \mathrm{e}-10$	& 8.590 \\
+		%		Ours w/ AM \& $P^2$		&\textbf{5.20\%}  & \textbf{1.99}   	& 8.50   \\
+		\bottomrule
+	\end{tabular}
+	
+\end{table}
 
 
-
-\FIXME{更新数据}
 \begin{figure}[htp]
 	\centering
 	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
 	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4/gcncomp.png}
-	\caption{内插数据集上速度场和压力场的模拟结果比较}
+	\caption{内插数据集上压力场和速度场的模拟结果比较}
 	\label{fig:interresult}
 \end{figure}
 
 \begin{figure}[htp]
 	\centering
 	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
-	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4/gcncomp.png}
+	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4_extend/gcncomp.png}
 	\caption{外推数据集上速度场和压力场的模拟结果比较}
 	\label{fig:outerresult}
 \end{figure}

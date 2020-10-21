@@ -1,0 +1,3 @@
+average time raw: 8.58984126984127, average time gcn: 5.901587301587302
+average speedup: 1.5725615990167312, max speedup: 2.205882352941176, min speedup: 1.205811138014528
+
