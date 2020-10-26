@@ -28,7 +28,7 @@
 \subsection{研究思路}
 与基于传统卷积神经网络的流场预测方法相比，基于图神经网络的流场模拟加速方法主要有两点不同：
 1）流场数据表示方法通用性更强。
-无论是结构网格还是非结构网格，利用图能够灵活地对网格单元的拓扑结构进行表示，
+利用图能够灵活地对网格单元的拓扑结构进行表示，
 边界条件和初始条件可以处理为节点特征向量。
 由于图结构利用网格对流场域进行了全尺寸模拟，不需要利用采样方法将流场表示为笛卡尔网格，
 所以最大程度保留了原始流场数据中的信息，一些控制流体流动的全局变量也可以在图神经网络训练时用于每一个图节点上。
@@ -73,27 +73,27 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 \end{table}
 
 \texttt{points}文件以矢量场的形式存储所有节点坐标，单位为米，
-文件主要内容如图\ref{fig:points_file}所示，节点的编号即为其坐标数据在points列表中的位置，初始编号为0。
+文件主要内容如图\ref{fig:points_file}所示，依据点坐标矢量在points列表中的位置对点进行编号，初始值为0。
 
 \begin{figure}[htp]
 	\centering
-	\includegraphics[width=0.72\textwidth]{./figures/points.png}
+	\includegraphics[width=0.52\textwidth]{./figures/points.png}
 	\caption{points文件结构}
 	\label{fig:points_file}	
 \end{figure}
 
-\texttt{faces}文件存储面单元-节点拓扑结构数据，文件主要内容如图\ref{fig:faces_file}所示。面单元最少由3个节点组成（三角形），其构造节点总数为每一行数据第一个整数（任意不小于3的值），每一行括号内的整数为面单元构造节点的编号，表示其在points列表中的位置。
-面单元的编号即为数据在faces列表中的位置，初始编号为0。整个faces列表包含边界面单元。
+\texttt{faces}文件记录了面单元与节点的连接信息，文件主要内容如图\ref{fig:faces_file}所示。面单元由3及3个以上的节点构成，
+每行第一个整数值表示构成面单元节点数，括号内的整数对应面单元构造节点的编号，即节点其在points列表中的位置。
+依据面节点信息在列表中的位置对面单元进行编号，初始值为0。
 
 \begin{figure}[htp]
 	\centering
-	\includegraphics[width=0.72\textwidth]{./figures/faces.png}
+	\includegraphics[width=0.52\textwidth]{./figures/faces.png}
 	\caption{faces文件结构}
 	\label{fig:faces_file}	
 \end{figure}
 
-如图\ref{fig:owner_neighbor}所示，owner体单元与neighbour体单元的标识基于公共面单元face外法向量（$S_f$）的方向，即由owner单元指向neighbour单元。owner单元与neighbour单元有时亦被称为左单元与右单元。
-
+一个内接面单元连接两个体单元，两者连接关系如图\ref{fig:owner_neighbor}所示。owner体单元与neighbour体单元的标识基于公共面单元face外法向量（$S_f$）的方向，即由owner单元指向neighbour单元。
 
 \begin{figure}[htb]
 	\centering
@@ -103,7 +103,9 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 	\label{fig:owner_neighbor}
 \end{figure}
 
-\texttt{owner}文件存储owner单元-面单元拓扑结构数据，文件主要内容如图\ref{fig:owner_file}所示。owner列表存储相对应面单元的owner单元编号，初始编号为0，owner列表的位置对应面单元的编号，亦对应于其在faces列表中的位置。任何一个面单元总存在一个owner单元，因此owner单元总数与面单元总数nFaces相等。
+\texttt{owner}文件记录面单元与owner体单元的连接关系，文件主要内容如图\ref{fig:owner_file}所示。
+列表存储该位置编号面单元对应owner体单元的编号，面单元与faces列表中的位置对应。
+
 
 \begin{figure}[htp]
 	\centering
@@ -112,7 +114,8 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 	\label{fig:owner_file}	
 \end{figure}
 
-\texttt{neighbour}文件存储neighbour单元-面单元拓扑结构数据，文件主要内容如图\ref{fig:neighbour_file}所示。neighbour列表存储相对应面单元的neighbour单元编号，初始编号不为0，neighbour列表的位置对应面单元的编号，亦对应于其在faces列表中的位置。需要特别说明的是，因为边界面单元没有neighbour单元，neighbour单元总数与内部面单元总数nInternalFaces相等。
+\texttt{neighbour}文件记录面单元与neighbour体单元的连接关系，文件主要内容如图\ref{fig:neighbour_file}所示。
+列表存储相对应面单元的neighbour单元编号，初始值不为0，neighbour列表的位置对应面单元的编号，亦对应于其在faces列表中的位置。
 
 \begin{figure}[htp]
 	\centering
@@ -121,7 +124,8 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 	\label{fig:neighbour_file}	
 \end{figure}
 
-\texttt{boundary}文件存储整个网格的边界信息，比如边界区域名称、边界类型type、面单元个数nFaces以及起始面单元编号startFace等，文件主要内容如图\ref{fig:boundary_file}所示。
+\texttt{boundary}文件记录了边界信息，
+比如边界区域名称、边界类型type、面单元个数nFaces以及起始面单元编号startFace等，文件主要内容如图\ref{fig:boundary_file}所示。
 
 \begin{figure}[htp]
 	\centering
@@ -130,7 +134,8 @@ OpenFOAM主要网格文件及其包含的信息如表\ref{tab:openfoammesh}所�
 	\label{fig:boundary_file}	
 \end{figure}
 
-\noindent OpenFOAM不支持二维网格，对于导入的外部二维网格，OpenFOAM会自动给网格加一个厚度，然后将前后面（front和back）边界类型设置为空（empty）。
+\noindent OpenFOAM仅支持三维维网格，对于二维网格文件，导入OpenFOAM后软件会给网格在z方向添加单位厚度，
+然后将前后面（front和back）边界类型设置为空（empty）。
 
 
 \section{基于GCN网络的气动流场模拟加速}
@@ -232,9 +237,8 @@ $W^{(l)}$是权重矩阵，在图卷积网络训练过程中不断调整；$\sig
 
 \subsubsection{基于OpenFOAM求解器生成数据集}
 实验算例设置二维不可压湍流条件下固体外部流场，几何外形选取为空气动力学中经常研究的翼型。
-机翼一般都有对称面。平行于机翼的对称面截得的机翼截面，称为翼剖面，通常也称为翼型。
-翼型的几何形状是机翼的基本几何特性之一。
-翼型的气动特性，直接影响到机翼及整个飞行器的气动特性，在空气动力学理论和飞行器设计中具有重要的地位。
+机翼一般具有对称性。翼型即是平行于机翼对称面的平面作用于机翼获得的平面，也称为翼剖面。
+翼型的几何形状是气动优化设计中的重要研究对象，。。。。其气动特性对飞行器的气动性能有重要影响。
 图\ref{fig:airfoil_example}展示了翼型e342和翼型NACA 0012的几何外形示意图\cite{UIUCsite}。
 \begin{figure}[htb]
 	\centering
@@ -328,9 +332,9 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 		\textbf{Method} &  $L_1$ loss	&	Mass Error &	Time (s)&	$L_1$ loss	&	Mass Error &	Time (s)\\
 		\midrule
 		
-		\textit{GCN}   &	$4.59 \mathrm{e}-5$ &	30.99\% &	0.011&	0.0002	&    30.99\%	& 	0.011\\
-		\textit{GCN+CFD}  & 	-	&	$1 \mathrm{e}-10$ &	5.277 &	- &	$1 \mathrm{e}-10$	& 5.902  \\
-		\textit{P\_CFD}  & 	-	&	$1 \mathrm{e}-10$ &	8.612 &	- &	$1 \mathrm{e}-10$	& 8.590 \\
+		\textit{GCN}   &	$4.59 \mathrm{e}-5$ &	-0.0771  &	0.0112&	0.0002	&    -0.0874	& 	0.0112\\
+		\textit{GCN+CFD}  & 	-	&	$3.80 \mathrm{e}-6$ &	5.277 &	- &	$4.65 \mathrm{e}-6$	& 5.902  \\
+		\textit{P\_CFD}  & 	-	&	$1.62 \mathrm{e}-6$ &	8.612 &	- &	$9.95 \mathrm{e}-6$	& 8.590 \\
 		\bottomrule
 	\end{tabular}
 	
@@ -338,7 +342,7 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 
 表\ref{tab:gcn_comp}展示了\textit{GCN}、\textit{GCN+CFD}和\textit{P\_CFD}三种方法在测试集上的性能表现。
 本章主要对不同方法的流场模拟结果的物理一致性和模拟效率进行比较。
-对于流场模拟结果的物理一致性，本章使用OpenFoam软件提供的\texttt{quad}算法对不同方法预测结果的速度场求散度，
+对于流场模拟结果的物理一致性，本章使用OpenFoam软件提供的\texttt{}算法对不同方法预测结果的速度场求散度，
 检验该方法是否能得到无散速度场，以满足稳态流动问题的连续性方程。
 由于该检验方法依据质量守恒定律，因此本章将测得的误差值命名为$Mass Error$。
 比较\textit{GCN}模型预测结果$L_1$误差值，可以发现在内插集上，\textit{GCN}模型的预测结果更好，
@@ -353,40 +357,74 @@ GCN网络训练损失函数使用常用的最小绝对值误差$L_1$损失函数
 \begin{figure}[htp]
 	\centering
 	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
-	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4/show.png}
+	\includegraphics[width=0.96\textwidth]{figures/gcn_result/chapter4/show.png}
 	\caption{不同方法模拟的压力场和速度场的分布概略图}
 	\label{fig:show}
 \end{figure}
 
 
-\begin{figure}[htp]
+
+\begin{figure}[htb]
 	\centering
-	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
-	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4/gcncomp.png}
-	\caption{内插数据集上压力场和速度场的模拟结果比较}
-	\label{fig:interresult}
+	\subfloat[GCN]{\label{GCNP}\includegraphics[width=0.42\textwidth]{figures/gcn_result/chapter4/roi_gcn_P.png}} \qquad
+	\subfloat[GCN+CFD]{\label{GCN_CFDP}\includegraphics[width=0.42\textwidth]{figures/gcn_result/chapter4/roi_gcn_cfd_P.png}} 
+	\caption{CFD求解器优化对压力场的影响}
+	\label{fig:gcn_result_p}
 \end{figure}
 
-\begin{figure}[htp]
+\begin{figure}[htb]
 	\centering
-	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
-	\includegraphics[width=0.88\textwidth]{figures/gcn_result/chapter4_extend/gcncomp.png}
-	\caption{外推数据集上速度场和压力场的模拟结果比较}
-	\label{fig:outerresult}
+	\subfloat[GCN]{\label{GCNU}\includegraphics[width=0.42\textwidth]{figures/gcn_result/chapter4/roi_gcn_U.png}} \qquad
+	\subfloat[GCN+CFD]{\label{GCN_CFDU}\includegraphics[width=0.42\textwidth]{figures/gcn_result/chapter4/roi_gcn_cfd_U.png}} 
+	\caption{CFD求解器优化对速度场的影响}
+	\label{fig:gcn_result_U}
 \end{figure}
+
+图\ref{fig:gcn_result_p}和图\ref{fig:gcn_result_U}分别展示了CFD求解器对模拟结果压力场和速度场的优化效果。
+可以观察到仅使用GCN方法在翼型几何体周围不能得到清晰平滑的模拟结果，而该区域流场对求解翼型气动系数有重要影响，
+因此直接使用GCN方法进行气动优化和气动评估可能难以得到真实合理的评估结果。
+GCN+CFD方法基于GCN模型提供的初场利用求解器进行优化和再计算，得到的收敛结果更具可靠性和有效性。
 
 
 \begin{figure}[htp]
 	\centering
 	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
 	\includegraphics[width=0.88\textwidth]{figures/gcn_result/time.png}
-	\caption{GCN+CFD方法在不同测试集上的模拟效率}
+	\caption{不同流场模拟方法在测试集上的模拟效率}
 	\label{fig:timeresult}
 \end{figure}
 
+图\ref{fig:timeresult}比较了基于GCN的气动流场模拟加速方法和传统CFD方法在测试集上的模拟效率。
+其中GCN模型推理过程在GPU上进行，每个算例的推理时间为0.011s，远小于求解器优化时间。
+内插集求解器优化时间少于外插集，这和GCN模型提供初场的准确率有关，在外插集上GCN模型的预测准确率较低，
+因此需要更长的求解器优化时间。
+相较于全阶CFD模拟方法，基于GCN的气动流场模拟加速方法在内插集和外推集上分别能实现1.73x和1.57x的平均加速比。
 
 
+
+\begin{figure}[htp]
+	\centering
+	%\includegraphics[width=0.42\textwidth]{data/MLP.pdf}
+	\includegraphics[width=0.56\textwidth]{figures/gcn_result/speedup.png}
+	\caption{基于GCN的气动流场模拟加速方法实现的流场模拟加速比分布}
+	\label{fig:speedup}
+\end{figure}
+图\ref{fig:speedup}展示了基于GCN的气动流场模拟加速方法的模拟效率在测试集上的具体表现，
+从图中可知，基于GCN的气动流场模拟加速方法对内插集和外推集上的所有算例均有模拟加速效果。
+在内插集上，最小加速比为1.30x，最大加速比为2.44x；
+在外推集上，最小加速比为1.21x，最大加速比为2.21x。
 
 
 \section{本章小结}
+
+本章针对传统卷积神经网络难以处理非欧式空间流场数据和深度学习模型的流场预测结果有效性难以保证的问题，
+提出一种基于图神经网络的流场模拟加速方法。
+首先分析流场数据中网格数据的特性，提出了基于图结构的数据表示方法。
+该方法更适用于处理不同类型的流场数据并有利于融合几何信息和流场全局控制信息。
+然后利用图卷积神经模型加速流场模拟，为CFD求解器快速提供了更接近收敛状态的初场，
+最后利用求解器对GCN模型的预测结果进行优化，获取满足物理规律的流场模拟结果。
+在内插测试集和外推测试集上实验结果表明，
+气动流场模拟加速方法分别能实现1.73x和1.57x的加速比，同时保证模拟结果的物理一致性。
+
+
 

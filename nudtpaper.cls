@@ -595,6 +595,7 @@ gbnamefmt=lowercase,gbpub=false]{biblatex}%
 {
   \ifthenelse{\isundefined{\@cosupervisor}}{\cosupervisor{}}{}
   \ifthenelse{\isundefined{\@encosupervisor}}{\encosupervisor{}}{}
+  
 }
 \def\maketitle{%
   \def\entry##1##2##3{%

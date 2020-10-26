@@ -7,16 +7,16 @@
 构建高效、准确的气动评估方法提供了新的途径。本文主要研究内容如下：
 
 \begin{itemize}
-	\item[(1)] 通过对比研究气动流场模拟任务和图像回归预测任务的相似性和不同点，本文提出了一种基于深度卷积网络的气动流场预测方法。首先，针对流场数据的表示问题，提出基于笛卡尔网络的流场数据表示方法，将流场数据转化为深度神经网络可以接受的形式。
-	其次，针对边界层等区域流场物理量变化大、包含重要信息多特点，本文提出了嵌入注意力模块的深度卷积网络，能够有效学习该区域流动规律，提升模型预测准确率；基于流体运动遵循的质量守恒定律和动量守恒定律，设计了物理约束的损失函数，有效保证了深度学习预测模型预测结果和CFD求解器的物理一致性。为了全面的评估气动流场预测模型的性能，本文定义了新的性能指标，在测试集上的对比试验结果表明该方法能有效提升气动流场模拟效率，同时将预测误差控制在5\%以内。
-	\item[(2)] 针对深度卷积网络难以处理非欧式空间流场数据的问题，本文提出了一种基于图神经网络的气动流场模拟加速方法。
+	\item[(1)] 通过对比研究气动流场模拟任务和图像回归预测任务的相似性和不同点，本文提出了一种基于卷积神经网络的气动流场预测方法。首先，针对流场数据的表示问题，提出基于笛卡尔网络的流场数据表示方法，将流场数据转化为深度神经网络可以接受的形式。
+	其次，针对边界层等区域流场物理量变化大、包含重要信息多特点，设计了嵌入注意力模块的\textsc{FlowDNN}网络，能够有效学习该区域流动规律，提升模型预测准确率；基于流体运动控制方程设计了物理约束的损失函数，有效保证了深度学习预测模型预测结果和CFD求解器的物理一致性。为了全面的评估气动流场预测模型的性能，本文定义了新的性能指标，在测试集上的对比试验结果表明该方法能有效提升气动流场模拟效率，同时实现预测误差在5\%以内。
+	\item[(2)] 针对深度卷积网络难以处理非欧式空间流场数据的问题，本文提出了一种基于图卷积网络的气动流场模拟加速方法。
 	基于图结构对流场数据进行表示，能够有效减少数据转换过程中的信息丢失，实现流场几何外形、边界条件和流动控制变量的有效融合；
 	基于图卷积网络的流模拟加速模块能够提取流场数据特征，为CFD求解器提供接近收敛状态的初始场，减少CFD迭代计算的时间。
 	实验结果表明该方法能够在加速气动流场模拟的同时，从根本上保证了模拟结果的有效性。
 	
 \end{itemize}
 
-本文针对飞行器气动优化设计中的典型问题，基于深度学习技术和方法，提出针对流场数据的表示方法，搭建气动流场预测模型和气动流场模拟加速模型，通过嵌入物理约束和融合传统CFD方法进一步优化模型预测结果，有效提升气动流场模拟效率，为基于深度学习的智能气动流场和气动性能预测技术在复杂飞行器气动优化设计中的应用奠定基础。
+本文面向飞行器气动优化设计中的典型问题，基于深度学习技术和方法，提出适合流场数据的表示方法，搭建气动流场预测模型和气动流场模拟加速模型，通过嵌入物理约束和融合传统CFD方法进一步优化模型预测结果，有效提升气动流场模拟效率，为基于深度学习的智能气动流场和气动性能预测方法在复杂飞行器气动优化设计中的应用奠定基础。
 
 \end{cabstract}
 \ckeywords{气动优化; 计算流体力学; 深度学习; 图神经网络; 物理一致性}
@@ -24,14 +24,23 @@
 
 
 \begin{eabstract}
-National University of Defense Technology is a comprehensive national key university based in Changsha, %
-Hunan Province, China. It is under the dual supervision of the Ministry of National Defense %
-and the Ministry of Education, designated for Project 211 and Project 985, %
-the two national plans for facilitating the development of Chinese higher education. %
+Aerodynamic optimization design is an important part of aerospace vehicle design and other applications. With the development of the aircraft industry and the increasing demand for responding to complex realistic environments,
+Aerodynamic optimization often involves many intertwined influence factors, which can easily lead to an ``explosion'' of the design optimization space. The full-level computational fluid dynamics (CFD) method can perform high-precision simulations for specific flow conditions, but it is often time-consuming and difficult to conduct a comprehensive design space exploration; although optimization techniques based on traditional machine learning methods are The first-order model has a wide range of applications,
+However, this kind of method is mostly suitable for simple aerodynamic optimization problems, and has certain limitations.
+In recent years, deep learning related research has continued to deepen and promote the further development of many application fields. In order to improve the efficiency of aerodynamic optimization,
+Constructing an efficient and accurate aerodynamic evaluation method provides a new way. The main research contents of this paper are as follows:
 
-NUDT was originally founded in 1953 as the Military Academy of Engineering in Harbin of Heilongjiang Province. %
-In 1970 the Academy of Engineering moved southwards to Changsha and was renamed Changsha Institute of Technology.%
- The Institute changed its name to National University of Defense Technology in 1978.
+\begin{itemize}
+	\item[(1)] By comparing and studying the similarities and differences between aerodynamic flow field simulation tasks and image regression prediction tasks, this paper proposes a method for aerodynamic flow field prediction based on convolutional neural networks. First, in view of the problem of the representation of flow field data, a Cartesian network-based flow field data representation method is proposed to convert the flow field data into a form acceptable to deep neural networks.
+	Secondly, in view of the large changes in the physical quantity of the flow field in the boundary layer and other areas, including important information, a deep convolutional network embedded in the attention module is designed, which can effectively learn the flow laws in this area and improve the accuracy of model prediction; based on fluid motion control equation The continuity equation and momentum equation in the design of the loss function of physical constraints effectively ensure the physical consistency of the prediction results of the deep learning prediction model and the CFD solver. In order to comprehensively evaluate the performance of the aerodynamic flow field prediction model, this paper defines new performance indicators. The comparative test results on the test set show that this method can effectively improve the aerodynamic flow field simulation efficiency while achieving a prediction error of less than 5\%.
+	\item[(2)] Aiming at the problem that deep convolutional networks are difficult to deal with non-Euclidean spatial flow field data, this paper proposes an acceleration method for aerodynamic flow field simulation based on graph convolutional networks.
+	Representing the flow field data based on the graph structure can effectively reduce the loss of information during the data conversion process and realize the effective integration of the flow field geometry, boundary conditions and flow control variables;
+	The flow simulation acceleration module based on graph convolutional network can extract flow field data characteristics, provide the CFD solver with an initial field close to the convergence state, and reduce the time of CFD iterative calculation.
+	The experimental results show that the method can accelerate the simulation of aerodynamic flow field while fundamentally ensuring the validity of the simulation results.
+	To
+\end{itemize}
+
+This paper is oriented to typical problems in the aerodynamic optimization design of aircraft, based on deep learning technology and methods, proposes a suitable representation method for flow field data, builds aerodynamic flow field prediction models and aerodynamic flow field simulation acceleration models, and integrates physical constraints and traditional CFD methods. Further optimize the model prediction results, effectively improve the efficiency of aerodynamic flow field simulation, and lay a foundation for the application of intelligent aerodynamic flow field and aerodynamic performance prediction methods based on deep learning in the aerodynamic optimization design of complex aircraft.
 
 \end{eabstract}
 \ekeywords{Aerodynamic Optimization; Computational Fluid Dynamics; Deep Learning; Graph  Neural  Network; Physical Consistency}
